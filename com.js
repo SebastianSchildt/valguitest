@@ -3,7 +3,7 @@ var powerGauge;
 
 var SUB_ID_SPEED=0;
 var SUB_ID_POW=0;
-
+var SUB_ID_GEAR=0;
 
 TOKEN="eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJrdWtzYS52YWwiLCJpc3MiOiJFY2xpcHNlIEtVS1NBIERldiIsImFkbWluIjp0cnVlLCJpYXQiOjE1MTYyMzkwMjIsImV4cCI6MTYwNjIzOTAyMiwidzNjLXZzcyI6eyIqIjoicncifX0.bUcEW4o3HiBHZAdy71qCWcu9oBSZClntI1ZXq7HAM8i8nDtiUP4up-VXxt3S3n8AKJQOZVlHudP_ixGTb1HBKa3_CD0HFurP_Wf2Jnrgguhqi1sUItvGjgq4BPpuBsu9kV1Ds-JDmCPBBuHfRtCck353BmMyv6CHn2CCgVQH-DwW6k7wOqcFkxfxfkClO-nrUSQbad_MrxNHhrnflb3N8bc4r61BQ8gHiEyl7JJIuLhAb7bLgarjqcHABkw6T2TkwfWFsddMR2GL_PYBP4D3_r-2IHAhixiEiO758lxA2-o2D0jtte-KmTHjeEUpaWr-ryv1whZXnE243iV1lMajvjgWq5ZnsYTG4Ff7GsR_4SKyd9j6wInkog5Kkx5tFJr2P9kh7HupXQeUzbuoJ7lZAgpGyD8icxZg7c8VTpLzTs5zowjJwbxze5JAylWcXLXOA3vQKpn8E3MseD_31LoVZGEvD9p372IgVmJ0ui4qT8_ZHeGPc8bV2Iy0vDkdAhjf-4Lwf4rDGDksYpK_PO70KylGRmZ9TqiKqstUI6AWG50Jii8MPnnr8qyNO3FD8Rv7E8BnL8ioLoN5VI9eyxy1HpW2SfLKUuCaLB9iKd6fv4U_DhF1AS-Y-iu8-kOovxkTk801DhDxWJN0nyRwmhqn8exjikNB1jnW5mFWLTeagNA"
 
@@ -18,8 +18,39 @@ function setPow(pow)  {
 //    console.log("New Pow is "+pow);
 }
 
+
+//Gear in M3: 0x00 Invalid, 0x01 P, 0x02 R, 0x04 D, 0x07 SNA
+function setGear(gear) {
+    console.log("New Gear is "+gear);
+    if (gear == "Drive") {
+       $("#statetxt").html("Cruise");
+       $("#cruise").css("display","block");
+       $("#park").css("display","none");
+    }
+    else if (gear == "Reverse") {
+       $("#statetxt").html("Reverse");
+       $("#cruise").css("display","block");
+       $("#park").css("display","none");
+    }
+    else if (gear == "Park") {
+       $("#statetxt").html("Park");
+       $("#cruise").css("display","none");
+       $("#park").css("display","block");
+    }
+    else if (gear == "Neutral") {
+       $("#statetxt").html("Neutral");
+       $("#cruise").css("display","block");
+       $("#park").css("display","none");
+    }
+    else if (gear == "Idle") {
+       $("#statetxt").html("Idle");
+       $("#cruise").css("display","block");
+       $("#park").css("display","none");
+    }
+}
+
 function setSpeed(speed) {
-    console.log("New Speed is "+speed);
+//    console.log("New Speed is "+speed);
     speedGauge.value=Math.abs(speed);
 }
 
@@ -61,6 +92,9 @@ function initWebsocket() {
         subMsg = { action: "subscribe", path: "Vehicle.OBD.EngineLoad", "requestId": "3" }
         wscon.send(JSON.stringify(subMsg));
 
+        subMsg = { action: "subscribe", path: "Vehicle.Drivetrain.Transmission.Gear", "requestId": "4" }
+        wscon.send(JSON.stringify(subMsg));
+
     };
 
     wscon.onerror = function () {
@@ -76,6 +110,9 @@ function initWebsocket() {
             }
             else if (jsonobj['requestId'] == 3) {
                 SUB_ID_POW=jsonobj['subscriptionId'];
+            }
+            else if (jsonobj['requestId'] == 4) {
+                SUB_ID_GEAR=jsonobj['subscriptionId'];
             }
         }
         if ( jsonobj.hasOwnProperty("action") ) {
@@ -99,6 +136,11 @@ function parseData(js) {
             setPow(js['value']);
             return;
         }
+        else if (js['subscriptionId'] == SUB_ID_GEAR) {
+            setGear(js['value']);
+            return;
+        }
+
     }
     console.log("Received unknown data "+js);
 }
