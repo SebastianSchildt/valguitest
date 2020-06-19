@@ -15,10 +15,12 @@ function setPow(pow)  {
         setTimeout(backToCruise,2000);
     }
     powerGauge.value=pow;
+//    console.log("New Pow is "+pow);
 }
 
 function setSpeed(speed) {
-    speedGauge.value=speed;
+    console.log("New Speed is "+speed);
+    speedGauge.value=Math.abs(speed);
 }
 
 function backToCruise() {
@@ -49,7 +51,7 @@ function initWebsocket() {
     var wscon = new WebSocket("ws://"+host+":8090");
 
     wscon.onopen = function () {
-        console.log("Open. Send Auhtorize"); // Send the message 'Ping' to the server
+        console.log("Open. Send Auhtorize"); 
         authMsg = { action: "authorize", tokens: TOKEN, requestId: "1" }
         wscon.send(JSON.stringify(authMsg));
 
@@ -62,7 +64,8 @@ function initWebsocket() {
     };
 
     wscon.onerror = function () {
-        console.log("error"); // Send the message 'Ping' to the server
+        console.log("Websocket error, try reconnection");
+        setTimeout(initWebsocket,100);
     };
 
     wscon.onmessage = function (e) {
@@ -109,6 +112,7 @@ function initGauges() {
         units: "Km/h",
         minValue: 0,
         maxValue: 220,
+	valueDec: 1,
         majorTicks: [
             "0",
             "20",
@@ -140,6 +144,7 @@ function initGauges() {
         needleCircleSize: 7,
         needleCircleOuter: true,
         needleCircleInner: false,
+	animation: false,
         animationDuration: 500,
         animationRule: "linear"
     }).draw();
@@ -207,6 +212,7 @@ function initGauges() {
         borders: false,
         borderRadius: 10,
         animationDuration: 500,
+	animation: false,
         animationRule: "linear",
         colorNeedle: "#ff0000",
         //colorNeedleEnd: "#00ff00",
