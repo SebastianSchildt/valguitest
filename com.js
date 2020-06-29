@@ -5,47 +5,112 @@ var SUB_ID_SPEED=0;
 var SUB_ID_POW=0;
 var SUB_ID_GEAR=0;
 
+var state="INIT";
+var inBoost=false;
+
 TOKEN="eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJrdWtzYS52YWwiLCJpc3MiOiJFY2xpcHNlIEtVS1NBIERldiIsImFkbWluIjp0cnVlLCJpYXQiOjE1MTYyMzkwMjIsImV4cCI6MTYwNjIzOTAyMiwidzNjLXZzcyI6eyIqIjoicncifX0.bUcEW4o3HiBHZAdy71qCWcu9oBSZClntI1ZXq7HAM8i8nDtiUP4up-VXxt3S3n8AKJQOZVlHudP_ixGTb1HBKa3_CD0HFurP_Wf2Jnrgguhqi1sUItvGjgq4BPpuBsu9kV1Ds-JDmCPBBuHfRtCck353BmMyv6CHn2CCgVQH-DwW6k7wOqcFkxfxfkClO-nrUSQbad_MrxNHhrnflb3N8bc4r61BQ8gHiEyl7JJIuLhAb7bLgarjqcHABkw6T2TkwfWFsddMR2GL_PYBP4D3_r-2IHAhixiEiO758lxA2-o2D0jtte-KmTHjeEUpaWr-ryv1whZXnE243iV1lMajvjgWq5ZnsYTG4Ff7GsR_4SKyd9j6wInkog5Kkx5tFJr2P9kh7HupXQeUzbuoJ7lZAgpGyD8icxZg7c8VTpLzTs5zowjJwbxze5JAylWcXLXOA3vQKpn8E3MseD_31LoVZGEvD9p372IgVmJ0ui4qT8_ZHeGPc8bV2Iy0vDkdAhjf-4Lwf4rDGDksYpK_PO70KylGRmZ9TqiKqstUI6AWG50Jii8MPnnr8qyNO3FD8Rv7E8BnL8ioLoN5VI9eyxy1HpW2SfLKUuCaLB9iKd6fv4U_DhF1AS-Y-iu8-kOovxkTk801DhDxWJN0nyRwmhqn8exjikNB1jnW5mFWLTeagNA"
 
 function setPow(pow)  {
     if ( pow > 100 ) {
-        $("#cruise").css("display","none");
-        $("#turbo").css("display","block");
-        $("#statetxt").html("Boost");
-        setTimeout(backToCruise,2000);
+       inBoost=true;
+       $("#statetxt").html("Boost");
+
+       $("#state_cruise").css("display","none");
+       $("#state_park").css("display","none");
+       $("#state_turbo").css("display","block");
+       $("#state_init").css("display","none");
+       $("#state_reverse").css("display","none");
+
+       setTimeout(boostEnd,2000);
     }
+    if (pow < 0) {
+	console.log("Negative pow "+pow)
+	pow=0; 
+    }
+    if (pow > 220) {
+	console.log("Excessive pow "+pow)
+	pow=220;
+    }
+
     powerGauge.value=pow;
 //    console.log("New Pow is "+pow);
 }
 
 
-//Gear in M3: 0x00 Invalid, 0x01 P, 0x02 R, 0x04 D, 0x07 SNA
-function setGear(gear) {
-    console.log("New Gear is "+gear);
-    if (gear == "Drive") {
+
+function stateToUI() {
+    if (state == "Drive") {
        $("#statetxt").html("Cruise");
-       $("#cruise").css("display","block");
-       $("#park").css("display","none");
+
+       $("#state_cruise").css("display","block");
+       $("#state_park").css("display","none");
+       $("#state_turbo").css("display","none");
+       $("#state_init").css("display","none");
+       $("#state_reverse").css("display","none");
     }
-    else if (gear == "Reverse") {
+    else if (state == "Reverse") {
        $("#statetxt").html("Reverse");
-       $("#cruise").css("display","block");
-       $("#park").css("display","none");
+
+       $("#state_cruise").css("display","none");
+       $("#state_park").css("display","none");
+       $("#state_turbo").css("display","none");
+       $("#state_init").css("display","none");
+       $("#state_reverse").css("display","block");
     }
-    else if (gear == "Park") {
+    else if (state == "Park") {
        $("#statetxt").html("Park");
-       $("#cruise").css("display","none");
-       $("#park").css("display","block");
+
+       $("#state_cruise").css("display","none");
+       $("#state_park").css("display","block");
+       $("#state_turbo").css("display","none");
+       $("#state_init").css("display","none");
+       $("#state_reverse").css("display","none");
     }
-    else if (gear == "Neutral") {
+    else if (state == "Neutral") {
        $("#statetxt").html("Neutral");
-       $("#cruise").css("display","block");
-       $("#park").css("display","none");
+
+       $("#state_cruise").css("display","block");
+       $("#state_park").css("display","none");
+       $("#state_turbo").css("display","none");
+       $("#state_init").css("display","none");
+       $("#state_reverse").css("display","none");
     }
-    else if (gear == "Idle") {
+    else if (state == "Idle") {
        $("#statetxt").html("Idle");
-       $("#cruise").css("display","block");
-       $("#park").css("display","none");
+
+       $("#state_cruise").css("display","block");
+       $("#state_park").css("display","none");
+       $("#state_turbo").css("display","none");
+       $("#state_init").css("display","none");
+       $("#state_reverse").css("display","none");
+    }
+    else if (state == "INIT") {
+       $("#statetxt").html("Ready");
+
+       $("#state_cruise").css("display","none");
+       $("#state_park").css("display","none");
+       $("#state_turbo").css("display","none");
+       $("#state_init").css("display","block");
+       $("#state_reverse").css("display","none");
+    }
+   else {
+       $("#statetxt").html("Unknown");
+
+       $("#state_cruise").css("display","none");
+       $("#state_park").css("display","none");
+       $("#state_turbo").css("display","none");
+       $("#state_init").css("display","block");
+       $("#state_reverse").css("display","none");
+    }
+
+}
+
+//Gear in M3: 0x00 Invalid, 0x01 P, 0x02 R, 0x04 D, 0x07 SNA
+function setState(gear) {
+    console.log("New Gear is "+gear);
+    state=gear;
+    if (!inBoost) {
+        stateToUI();
     }
 }
 
@@ -54,10 +119,9 @@ function setSpeed(speed) {
     speedGauge.value=Math.abs(speed);
 }
 
-function backToCruise() {
-    $("#turbo").css("display","none");
-    $("#cruise").css("display","block");
-    $("#statetxt").html("Cruise");
+function boostEnd() {
+      inBoost=false;
+      stateToUI();
 }
 
 function testRandomSpeed() {
@@ -137,7 +201,7 @@ function parseData(js) {
             return;
         }
         else if (js['subscriptionId'] == SUB_ID_GEAR) {
-            setGear(js['value']);
+            setState(js['value']);
             return;
         }
 
@@ -197,9 +261,10 @@ function initGauges() {
         height: 160,
         units: "kW",
         title: "Inverter Power",
-        minValue: -50,
-        maxValue: 180,
-        majorTicks: [
+//        minValue: -50,
+	minValue: 0,
+        maxValue: 210,
+/*        majorTicks: [
             -50,
             -40,
             -30,
@@ -224,20 +289,45 @@ function initGauges() {
             160,
             170,
             180
+        ],*/
+        majorTicks: [
+            0,
+            10,
+            20,
+            30,
+            40,
+            50,
+            60,
+            70,
+            80,
+            90,
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160,
+            170,
+            180,
+            190,
+	    200,
+            210
         ],
+
         minorTicks: 5,
         //strokeTicks: true,
         //ticksWidth: 15,
         //ticksWidthMinor: 7.5,
         highlights: [
-            {
+           /* {
                 "from": -50,
                 "to": 0,
                 "color": "rgba(0,255, 0, .8)"
-            },
+            },*/
             {
-                "from": 140,
-                "to": 180,
+                "from": 170,
+                "to": 210,
                 "color": "rgba(255, 0, 0, .8)"
             }
         ],
