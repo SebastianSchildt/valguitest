@@ -18,6 +18,9 @@ function setPow(pow)  {
        $("#state_cruise").css("display","none");
        $("#state_park").css("display","none");
        $("#state_turbo").css("display","block");
+       setTimeout(function() { //this will restart the animation
+                $("#state_turbo").attr('src', "./turbo.gif");
+            }, 0);
        $("#state_init").css("display","none");
        $("#state_reverse").css("display","none");
 
