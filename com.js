@@ -8,6 +8,8 @@ var SUB_ID_GEAR=0;
 var state="INIT";
 var inBoost=false;
 
+var wscon = null;
+
 TOKEN="eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJrdWtzYS52YWwiLCJpc3MiOiJFY2xpcHNlIEtVS1NBIERldiIsImFkbWluIjp0cnVlLCJpYXQiOjE1MTYyMzkwMjIsImV4cCI6MTYwNjIzOTAyMiwidzNjLXZzcyI6eyIqIjoicncifX0.bUcEW4o3HiBHZAdy71qCWcu9oBSZClntI1ZXq7HAM8i8nDtiUP4up-VXxt3S3n8AKJQOZVlHudP_ixGTb1HBKa3_CD0HFurP_Wf2Jnrgguhqi1sUItvGjgq4BPpuBsu9kV1Ds-JDmCPBBuHfRtCck353BmMyv6CHn2CCgVQH-DwW6k7wOqcFkxfxfkClO-nrUSQbad_MrxNHhrnflb3N8bc4r61BQ8gHiEyl7JJIuLhAb7bLgarjqcHABkw6T2TkwfWFsddMR2GL_PYBP4D3_r-2IHAhixiEiO758lxA2-o2D0jtte-KmTHjeEUpaWr-ryv1whZXnE243iV1lMajvjgWq5ZnsYTG4Ff7GsR_4SKyd9j6wInkog5Kkx5tFJr2P9kh7HupXQeUzbuoJ7lZAgpGyD8icxZg7c8VTpLzTs5zowjJwbxze5JAylWcXLXOA3vQKpn8E3MseD_31LoVZGEvD9p372IgVmJ0ui4qT8_ZHeGPc8bV2Iy0vDkdAhjf-4Lwf4rDGDksYpK_PO70KylGRmZ9TqiKqstUI6AWG50Jii8MPnnr8qyNO3FD8Rv7E8BnL8ioLoN5VI9eyxy1HpW2SfLKUuCaLB9iKd6fv4U_DhF1AS-Y-iu8-kOovxkTk801DhDxWJN0nyRwmhqn8exjikNB1jnW5mFWLTeagNA"
 
 function setPow(pow)  {
@@ -144,12 +146,28 @@ function initAll() {
     initWebsocket();
 }
 
+function statusMessage(msg) {
+    $("#status").html(msg);
+}
+
+function keepAlive( ) {
+	aliveMSG = { action: "get", path: "Vehicle.VehicleIdentification.VIN", "requestId": "99" }
+	if (wscon != null) {
+		wscon.send(JSON.stringify(aliveMSG));
+	}
+	setTimeout(keepAlive,2000); //we need to regularly send data thorugh ws to detect disconnects
+
+
+}
+
 function initWebsocket() {
     host=window.location.hostname
-    var wscon = new WebSocket("ws://"+host+":8090");
+    wscon = new WebSocket("ws://"+host+":8090");
 
+    statusMessage("Opening  websocket...")
     wscon.onopen = function () {
         console.log("Open. Send Auhtorize"); 
+        statusMessage("Websocket open. Sending authorization & subsription request...")
         authMsg = { action: "authorize", tokens: TOKEN, requestId: "1" }
         wscon.send(JSON.stringify(authMsg));
 
@@ -161,12 +179,23 @@ function initWebsocket() {
 
         subMsg = { action: "subscribe", path: "Vehicle.Drivetrain.Transmission.Gear", "requestId": "4" }
         wscon.send(JSON.stringify(subMsg));
+        
+        setTimeout(keepAlive,2000); //we need to regularly send data thorugh ws to detect disconnects 
 
     };
+    
 
     wscon.onerror = function () {
-        console.log("Websocket error, try reconnection");
-        setTimeout(initWebsocket,100);
+        //console.log("Websocket error, try reconnection");
+        statusMessage("Websocket connection error. Reconnecting...")
+        //onclose will be called anyway
+        //setTimeout(initWebsocket,500);
+    };
+    
+    wscon.onclose = function () {
+        console.log("Websocket was closed, try reconnection");
+        statusMessage("Websocket unexpectedly closed. Reconnecting...")
+        setTimeout(initWebsocket,500);
     };
 
     wscon.onmessage = function (e) {
@@ -174,17 +203,25 @@ function initWebsocket() {
         if ( jsonobj.hasOwnProperty("requestId") ) {
             if (jsonobj['requestId'] == 2) {
                 SUB_ID_SPEED=jsonobj['subscriptionId'];
+                statusMessage("Speed subcription succeeded.")
             }
             else if (jsonobj['requestId'] == 3) {
                 SUB_ID_POW=jsonobj['subscriptionId'];
+                statusMessage("Power subcription succeeded.")
             }
             else if (jsonobj['requestId'] == 4) {
                 SUB_ID_GEAR=jsonobj['subscriptionId'];
+                statusMessage("Gear subcription succeeded.")
             }
+            else if (jsonobj['requestId'] == 99) {
+                    return 
+			}
+
         }
         if ( jsonobj.hasOwnProperty("action") ) {
             if (jsonobj['action'] == "subscribe" && jsonobj.hasOwnProperty("value") ) {
                 parseData(jsonobj);
+                statusMessage("Receiving data")
                 return;
             }
         }
