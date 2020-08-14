@@ -152,7 +152,7 @@ function statusMessage(msg) {
 
 function keepAlive( ) {
 	aliveMSG = { action: "get", path: "Vehicle.VehicleIdentification.VIN", "requestId": "99" }
-	if (wscon != null) {
+	if (wscon != null && wscon.readyState == WebSocket.OPEN) {
 		wscon.send(JSON.stringify(aliveMSG));
 	}
 	setTimeout(keepAlive,2000); //we need to regularly send data thorugh ws to detect disconnects
