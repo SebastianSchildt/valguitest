@@ -10,7 +10,7 @@ var inBoost=false;
 
 var wscon = null;
 
-TOKEN="eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJrdWtzYS52YWwiLCJpc3MiOiJFY2xpcHNlIEtVS1NBIERldiIsImFkbWluIjp0cnVlLCJpYXQiOjE1MTYyMzkwMjIsImV4cCI6MTYwNjIzOTAyMiwidzNjLXZzcyI6eyIqIjoicncifX0.bUcEW4o3HiBHZAdy71qCWcu9oBSZClntI1ZXq7HAM8i8nDtiUP4up-VXxt3S3n8AKJQOZVlHudP_ixGTb1HBKa3_CD0HFurP_Wf2Jnrgguhqi1sUItvGjgq4BPpuBsu9kV1Ds-JDmCPBBuHfRtCck353BmMyv6CHn2CCgVQH-DwW6k7wOqcFkxfxfkClO-nrUSQbad_MrxNHhrnflb3N8bc4r61BQ8gHiEyl7JJIuLhAb7bLgarjqcHABkw6T2TkwfWFsddMR2GL_PYBP4D3_r-2IHAhixiEiO758lxA2-o2D0jtte-KmTHjeEUpaWr-ryv1whZXnE243iV1lMajvjgWq5ZnsYTG4Ff7GsR_4SKyd9j6wInkog5Kkx5tFJr2P9kh7HupXQeUzbuoJ7lZAgpGyD8icxZg7c8VTpLzTs5zowjJwbxze5JAylWcXLXOA3vQKpn8E3MseD_31LoVZGEvD9p372IgVmJ0ui4qT8_ZHeGPc8bV2Iy0vDkdAhjf-4Lwf4rDGDksYpK_PO70KylGRmZ9TqiKqstUI6AWG50Jii8MPnnr8qyNO3FD8Rv7E8BnL8ioLoN5VI9eyxy1HpW2SfLKUuCaLB9iKd6fv4U_DhF1AS-Y-iu8-kOovxkTk801DhDxWJN0nyRwmhqn8exjikNB1jnW5mFWLTeagNA"
+TOKEN="eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJrdWtzYS52YWwiLCJpc3MiOiJFY2xpcHNlIEtVS1NBIERldiIsImFkbWluIjp0cnVlLCJpYXQiOjE1MTYyMzkwMjIsImV4cCI6MTc2NzIyNTU5OSwia3Vrc2EtdnNzIjp7IioiOiJydyJ9fQ.QQcVR0RuRJIoasPXYsMGZhdvhLjUalk4GcRaxhh3-0_j3CtVSZ0lTbv_Z3As5BfIYzaMlwUzFGvCVOq2MXVjRK81XOAZ6wIsyKOxva16zjbZryr2V_m3yZ4twI3CPEzJch11_qnhInirHltej-tGg6ySfLaTYeAkw4xYGwENMBBhN5t9odANpScZP_xx5bNfwdW1so6FkV1WhpKlCywoxk_vYZxo187d89bbiu-xOZUa5D-ycFkd1-1rjPXLGE_g5bc4jcQBvNBc-5FDbvt4aJlTQqjpdeppxhxn_gjkPGIAacYDI7szOLC-WYajTStbksUju1iQCyli11kPx0E66me_ZVwOX07f1lRF6D2brWm1LcMAHM3bQUK0LuyVwWPxld64uSAEsvSKsRyJERc7nZUgLf7COnUrrkxgIUNjukbdT2JVN_I-3l3b4YXg6JVD7Y5g0QYBKgXEFpZrDbBVhzo7PXPAhJD6-c3DcUQyRZExbrnFV56RwWuExphw8lYnbMvxPWImiVmB9nRVgFKD0TYaw1sidPSSlZt8Uw34VZzHWIZQAQY0BMjR33fefg42XQ1YzIwPmDx4GYXLl7HNIIVbsRsibKaJnf49mz2qnLC1K272zXSPljO11Ke1MNnsnKyUH7mcwEs9nhTsnMgEOx_TyMLRYo-VEHBDLuEOiBo"
 
 function setPow(pow)  {
     if ( pow > 100 & !inBoost ) {
@@ -126,6 +126,10 @@ function setSpeed(speed) {
 
 function boostEnd() {
       inBoost=false;
+                      //unsubscripe
+                      console.log("UNSUB! ")
+                      unsubMsg = { action: "unsubscribe", subscriptionId: SUB_ID_SPEED, "requestId": "200" }
+                      wscon.send(JSON.stringify(unsubMsg));
       stateToUI();
 }
 
@@ -177,7 +181,7 @@ function initWebsocket() {
         subMsg = { action: "subscribe", path: "Vehicle.OBD.EngineLoad", "requestId": "3" }
         wscon.send(JSON.stringify(subMsg));
 
-        subMsg = { action: "subscribe", path: "Vehicle.Drivetrain.Transmission.Gear", "requestId": "4" }
+        subMsg = { action: "subscribe", path: "Vehicle.Powertrain.Transmission.Gear", "requestId": "4" }
         wscon.send(JSON.stringify(subMsg));
         
         setTimeout(keepAlive,2000); //we need to regularly send data thorugh ws to detect disconnects 
@@ -219,7 +223,7 @@ function initWebsocket() {
 
         }
         if ( jsonobj.hasOwnProperty("action") ) {
-            if (jsonobj['action'] == "subscribe" && jsonobj.hasOwnProperty("value") ) {
+            if (jsonobj['action'] == "subscription" && jsonobj.hasOwnProperty("data") ) {
                 parseData(jsonobj);
                 statusMessage("Receiving data")
                 return;
@@ -233,15 +237,15 @@ function initWebsocket() {
 function parseData(js) {
     if ( js.hasOwnProperty("subscriptionId") ) {
         if (js['subscriptionId'] == SUB_ID_SPEED) {
-            setSpeed(js['value']);
+            setSpeed(js['data']['dp']['value']);
             return;
         }
         else if (js['subscriptionId'] == SUB_ID_POW) {
-            setPow(js['value']);
+            setPow(js['data']['dp']['value']);
             return;
         }
         else if (js['subscriptionId'] == SUB_ID_GEAR) {
-            setState(js['value']);
+            setState(js['data']['dp']['value']);
             return;
         }
 
